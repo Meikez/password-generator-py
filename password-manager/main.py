@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 
 def password_generator():
@@ -50,17 +51,56 @@ def save_credential():
     username = username_input.get()
     password = password_input.get()
 
+    new_data = {
+        website: {
+            "email": username,
+            "password": password,
+
+        }
+    }
+
     if website=="" or username =="" or password=="":
         messagebox.showinfo(title="Warning", message="Please make sure you haven't left any fields empty.")
     else:
         confirmated= messagebox.askokcancel(title=website, message=f"These are the details entered: \nEmail: {username} \nPassword: {password} \nIs it ok to save?")
 
         if confirmated:
-            with open('credentials.txt', mode="a") as file:
-                credentials = f"{website} , {username} , {password} \n"
-                file.write(credentials)
-                website_input.delete(0, END)
-                password_input.delete(0, END)
+            try:
+                with open('credentials.json', mode="r") as file:
+                    # Reading current data
+                    data = json.load(file)
+                    # Updating the data
+                    data.update(new_data)
+            except FileNotFoundError as error:
+                with open("credentials.json", "w") as file_write:
+                    print(f"we are at exception {error}")
+                    json.dump(new_data, file_write, indent=4)
+                    # Saving the update data
+
+            else:
+
+                with open("credentials.json", "w") as file_update:
+                    print(f"we are at else exception")
+                    json.dump(data, file_update, indent=4)
+            finally:
+                    website_input.delete(0, END)
+                    password_input.delete(0, END)
+
+
+def search_password():
+    try:
+        with open("credentials.json", "r") as password_file:
+            data = json.load(password_file)
+            password_find = {}
+            if website_input.get() in data:
+                password_find = data[website_input.get()]
+                messagebox.showinfo(title="Credentials", message=f"username: {password_find["email"]} \n password: {password_find["password"]}")
+                print(password_find)
+            else:
+                messagebox.showinfo(title="warning", message="Website not found")
+
+    except FileNotFoundError:
+        messagebox.showinfo(title="warning", message="File not found")
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -93,18 +133,22 @@ password_label.grid(column=0,row=3)
 # Inputs
 
 website_input = Entry(width=35)
-website_input.grid(column=1,row=1, columnspan=2)
+website_input.grid(column=1,row=1, columnspan=1)
 
 username_input = Entry(width=35)
-username_input.grid(column=1,row=2, columnspan=2)
+username_input.grid(column=1,row=2, columnspan=1)
 username_input.insert(0,"mati.lealtech@gmail.com")
 
-password_input = Entry(width=21)
-password_input.grid(column=1,row=3)
+password_input = Entry(width=20, )
+password_input.grid(column=1,row=3, )
 
 generate_password_button = Button(text="Generate password", command=password_generator)
 generate_password_button.grid(column=2,row=3)
 
 add_button = Button(text="add",width=36, command=save_credential)
 add_button.grid(column=1,row=4,columnspan=2)
+
+search_button = Button(text="Search", command=search_password )
+search_button.grid(column=2,row=1)
+
 window.mainloop()
